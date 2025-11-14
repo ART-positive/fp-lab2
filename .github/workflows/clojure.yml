@@ -1,0 +1,27 @@
+name: Clojure CI
+
+on: push
+
+jobs:
+  clojure:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Clojure CLI
+        uses: DeLaGuardo/setup-clojure@12.5
+        with:
+          cli: latest
+          clj-kondo: latest
+          cljfmt: latest
+
+      - name: Check format fp-lab2
+        run: cljfmt check
+
+      - name: Lint fp-lab2
+        run: clj-kondo --lint src/fp-lab2
+
+      - name: Test fp-Lab2
+        run: clojure -X:test
