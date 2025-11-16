@@ -1,8 +1,8 @@
 (ns fp-lab2.core-test
   (:require [clojure.string :as str]
             [clojure.test :refer [deftest is run-tests]]
-            [lab2.bag :refer [count-occurrences, entries, create-prefix-tree, remove-one-from-bag, filter-bag, map-entries, entries-with-mapped-keys, compare-bags, trie-keys, merge-bags, empty-trie, insert, fold-left-trie, fold-right-trie]])
-  (:import (lab2.bag TrieBag)))
+            [fp-lab2.bag :refer [count-occurrences, entries, create-prefix-tree, remove-one-from-bag, filter-bag, map-entries, entries-with-mapped-keys, compare-bags, trie-keys, merge-bags, empty-trie, insert, fold-left-trie, fold-right-trie]])
+  (:import (fp-lab2.bag TrieBag)))
 
 (deftest test-insert
   (let [tree (-> (TrieBag. (empty-trie))

@@ -3,8 +3,8 @@
             [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
-            [lab2.bag :refer [count-occurrences, remove-one-from-bag, filter-bag, compare-bags, merge-bags, empty-trie, insert]])
-  (:import (lab2.bag TrieBag)
+            [fp-lab2.bag :refer [count-occurrences, remove-one-from-bag, filter-bag, compare-bags, merge-bags, empty-trie, insert]])
+  (:import (fp-lab2.bag TrieBag)
            (java.util ArrayList)))
 
 (def string-gen
