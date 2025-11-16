@@ -1,14 +1,10 @@
 (ns fp-lab2.core-test
   (:require [clojure.string :as str]
             [clojure.test :refer [deftest is run-tests]]
-            [fp-lab2.bag :refer [count-occurrences, entries, create-prefix-tree, remove-one-from-bag, filter-bag, map-entries, entries-with-mapped-keys, compare-bags, trie-keys, merge-bags, empty-trie, insert, fold-left-trie, fold-right-trie]])
-  (:import (fp-lab2.bag TrieBag)))
+            [fp-lab2.bag :refer [count-occurrences, entries, create-prefix-tree, remove-one-from-bag, filter-bag, map-entries, entries-with-mapped-keys, compare-bags, trie-keys, merge-bags, empty-trie, insert, fold-left-trie, fold-right-trie]]))
 
 (deftest test-insert
-  (let [tree (-> (TrieBag. (empty-trie))
-                 (insert "apple")
-                 (insert "banana")
-                 (insert "apple"))]
+  (let [tree (create-prefix-tree ["apple" "banana" "apple"])]
     (is (= 2 (count-occurrences tree "apple")))
     (is (= 1 (count-occurrences tree "banana")))
     (is (= 0 (count-occurrences tree "grape")))
@@ -60,11 +56,7 @@
     (is (= (set (entries merged-bag)) #{["apple" 2] ["apricot" 1] ["banana" 1]}))))
 
 (deftest fold-trie-tests
-  (let [bag (-> (TrieBag. (empty-trie))
-                (insert "apple")
-                (insert "banana")
-                (insert "banana")
-                (insert "cherry"))]
+  (let [bag (create-prefix-tree ["apple" "banana" "banana" "cherry"])]
 
     ;; Тест для fold-left-trie
     (let [left-fold-result (fold-left-trie bag
