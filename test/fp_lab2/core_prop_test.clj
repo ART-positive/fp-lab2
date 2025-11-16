@@ -3,9 +3,8 @@
             [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
-            [fp-lab2.bag :refer [count-occurrences, remove-one-from-bag, filter-bag, compare-bags, merge-bags, empty-trie, insert]])
-  (:import (fp-lab2.bag TrieBag)
-           (java.util ArrayList)))
+            [fp-lab2.bag :refer [count-occurrences, remove-one-from-bag, filter-bag, compare-bags, merge-bags, insert, create-prefix-tree]])
+  (:import (java.util ArrayList)))
 
 (def string-gen
   (gen/fmap #(apply str %) (gen/vector gen/char-alpha 1 20)))
@@ -29,13 +28,15 @@
 (deftest test-insert-and-count-occurrences
   (tc/quick-check 100
                   (prop/for-all [key mixed-gen]
-                                (let [bag (insert (TrieBag. (empty-trie)) key)]
+                                (let [bag (-> (create-prefix-tree [])
+                                              (insert key))]
                                   (= 1 (count-occurrences bag key))))))
 
 (deftest test-insert-and-remove
   (tc/quick-check 100
                   (prop/for-all [key mixed-gen]
-                                (let [bag (insert (TrieBag. (empty-trie)) key)
+                                (let [bag (-> (create-prefix-tree [])
+                                              (insert key))
                                       updated-bag (remove-one-from-bag bag key)]
                                   (and (= 0 (count-occurrences updated-bag key))
                                        (= 1 (count-occurrences bag key)))))))
@@ -44,8 +45,8 @@
   (tc/quick-check 100
                   (prop/for-all [keys1 (gen/vector mixed-gen 1 5)
                                  keys2 (gen/vector mixed-gen 1 5)]
-                                (let [bag1 (reduce insert (TrieBag. (empty-trie)) keys1)
-                                      bag2 (reduce insert (TrieBag. (empty-trie)) keys2)
+                                (let [bag1 (create-prefix-tree keys1)
+                                      bag2 (create-prefix-tree keys2)
                                       merged-bag (merge-bags bag1 bag2)]
                                   (and (every? #(= (count-occurrences merged-bag %) (+ (count-occurrences bag1 %) (count-occurrences bag2 %))) keys1)
                                        (every? #(= (count-occurrences merged-bag %) (+ (count-occurrences bag1 %) (count-occurrences bag2 %))) keys2))))))
@@ -55,7 +56,7 @@
                   (prop/for-all [keys (gen/vector mixed-gen 1 5)
                                  pred (gen/elements [(fn [s] (seq (s)))  ;; Предикаты для фильтрации
                                                      (constantly false)])]
-                                (let [bag (reduce insert (TrieBag. (empty-trie)) keys)
+                                (let [bag (create-prefix-tree keys)
                                       filtered-bag (filter-bag bag pred)]
                                   ;; Проверяем, что результат фильтрации соответствует предикату
                                   (every? (fn [k]
@@ -70,9 +71,9 @@
   (tc/quick-check 100
                   (prop/for-all [keys1 (gen/vector mixed-gen 1 5)
                                  keys2 (gen/vector mixed-gen 1 5)]
-                                (let [bag1 (reduce insert (TrieBag. (empty-trie)) keys1)
-                                      bag2 (reduce insert (TrieBag. (empty-trie)) keys1)
-                                      bag3 (reduce insert (TrieBag. (empty-trie)) keys2)]
+                                (let [bag1 (create-prefix-tree keys1)
+                                      bag2 (create-prefix-tree keys1)
+                                      bag3 (create-prefix-tree keys2)]
                                   (and (compare-bags bag1 bag2)
                                        (not (compare-bags bag1 bag3)))))))
 
@@ -80,8 +81,8 @@
   (tc/quick-check 100
                   (prop/for-all [keys1 (gen/vector mixed-gen 1 5)
                                  keys2 (gen/vector mixed-gen 1 5)]
-                                (let [tree1 (reduce insert (TrieBag. (empty-trie)) keys1)
-                                      tree2 (reduce insert (TrieBag. (empty-trie)) keys2)]
+                                (let [tree1 (create-prefix-tree keys1)
+                                      tree2 (create-prefix-tree keys2)]
                                   (compare-bags (merge-bags tree1 tree2) (merge-bags tree2 tree1))))))
 
 (deftest associative-property
@@ -89,17 +90,17 @@
                   (prop/for-all [keys1 (gen/vector string-gen 1 5)
                                  keys2 (gen/vector string-gen 1 5)
                                  keys3 (gen/vector string-gen 1 5)]
-                                (let [tree1 (reduce insert (TrieBag. (empty-trie)) keys1)
-                                      tree2 (reduce insert (TrieBag. (empty-trie)) keys2)
-                                      tree3 (reduce insert (TrieBag. (empty-trie)) keys3)]
+                                (let [tree1 (create-prefix-tree keys1)
+                                      tree2 (create-prefix-tree keys2)
+                                      tree3 (create-prefix-tree keys3)]
                                   (compare-bags (merge-bags tree1 (merge-bags tree2 tree3))
                                                 (merge-bags (merge-bags tree1 tree2) tree3))))))
 
 (deftest neutral-element-property
   (tc/quick-check 100
                   (prop/for-all [keys (gen/vector string-gen 1 5)]
-                                (let [tree (reduce insert (TrieBag. (empty-trie)) keys)
-                                      zero-tree (TrieBag. (empty-trie))] ;; Нейтральный элемент
+                                (let [tree (create-prefix-tree keys)
+                                      zero-tree (create-prefix-tree [])] ;; Нейтральный элемент
                                   (compare-bags (merge-bags tree zero-tree) tree)))))
 
 (run-tests)
