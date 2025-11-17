@@ -190,11 +190,11 @@
 
 ### Unit Testing
 
-[Посмотреть тесты](test/lab2/core_test.clj)
+[Посмотреть тесты](test/fp-lab2/core_test.clj)
 
 ### Property-based тестирование
 
-[Посмотреть тесты](test/lab2/core_prop_test.clj)
+[Посмотреть тесты](test/fp-lab2/core_prop_test.clj)
 
 Все тесты успешно проходят
 
