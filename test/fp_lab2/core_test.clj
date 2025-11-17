@@ -58,28 +58,24 @@
 (deftest fold-trie-tests
   (let [bag (create-prefix-tree ["apple" "banana" "banana" "cherry"])]
 
-    ;; Тест для fold-left-trie
     (let [left-fold-result (fold-left-trie bag
                                            (fn [acc _ count]
                                              (+ acc count)) ;; Суммируем количество вхождений
                                            0)] ;; Начальное значение 0
       (is (= left-fold-result 4) "Total occurrences using fold-left-trie"))
 
-    ;; Тест для fold-right-trie
     (let [right-fold-result (fold-right-trie bag
                                              (fn [acc _ count]
                                                (+ acc count)) ;; Суммируем количество вхождений
                                              0)] ;; Начальное значение 0
       (is (= right-fold-result 4) "Total occurrences using fold-right-trie"))
 
-    ;; Тест для получения всех ключей с fold-left-trie
     (let [keys-left (fold-left-trie bag
                                     (fn [acc key _]
                                       (conj acc key)) ;; Собираем все ключи
                                     [])] ;; Начальное значение пустой вектор
       (is (= keys-left ["apple" "banana" "cherry"]) "Keys using fold-left-trie"))
 
-    ;; Тест для получения всех ключей с fold-right-trie
     (let [keys-right (fold-right-trie bag
                                       (fn [acc key _]
                                         (conj acc key)) ;; Собираем все ключи

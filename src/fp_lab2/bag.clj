@@ -1,6 +1,5 @@
 (ns fp-lab2.bag)
 
-;; Протокол для мешка (Bag)
 (defprotocol BagProtocol
   (insert [this element] "Добавляет элемент в мешок по ключу")
   (count-occurrences [this key] "Подсчитать количество вхождений ключа")
@@ -15,15 +14,12 @@
   (compare-bags [this other] "Сравнение двух мешков")
   (entries-with-mapped-keys [this] "Возвращает записи с изменёнными ключами"))
 
-;; Создаёт пустой узел для дерева
 (defn empty-trie []
   {:count 0 :children {}})
 
-;; Реализация мультимножества на основе Trie
 (deftype TrieBag [trie]
   BagProtocol
 
-  ;; Вставка элементов в мультимножество
   (insert [_ key]
     (letfn [(insert-seq [node elems]
               ;; Если все символы обработаны, увеличиваем счетчик для окончания слова
