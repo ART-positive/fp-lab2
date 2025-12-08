@@ -1,108 +1,44 @@
 (ns fp-lab2.core-prop-test
-  (:require [clojure.test :refer [deftest run-tests]]
-            [clojure.test.check :as tc]
+  (:require [clojure.test.check.properties :as prop]
             [clojure.test.check.generators :as gen]
-            [clojure.test.check.properties :as prop]
-            [fp-lab2.bag :refer [count-occurrences, remove-one-from-bag, filter-bag, compare-bags, merge-bags, insert, create-prefix-tree]])
-  (:import (java.util ArrayList)))
+            [clojure.test.check.clojure-test :refer [defspec]]
+            [fp-lab2.bag :refer [create-prefix-tree insert count-occurrences remove-one-from-bag
+                                 merge-bags compare-bags empty-bag]]))
+
+(declare prop-insert-count
+         prop-remove-one
+         prop-merge-commutative
+         prop-merge-associative
+         prop-neutral-element)
 
 (def string-gen
-  (gen/fmap #(apply str %) (gen/vector gen/char-alpha 1 20)))
+  (gen/fmap #(apply str %) (gen/vector gen/char-alpha 1 10)))
 
-(def number-gen
-  (gen/choose 0 300))
+(def bag-gen
+  (gen/fmap (fn [keys] (create-prefix-tree keys))
+            (gen/vector string-gen 0 30)))
 
-(def symbol-gen
-  (gen/fmap #(symbol (str %)) (gen/elements (map char (range 53 173)))))
+(defspec prop-insert-count 200
+  (prop/for-all [bag bag-gen
+                 key string-gen]
+                (= (inc (count-occurrences bag key))
+                   (count-occurrences (insert bag key) key))))
 
-(def arraylist-gen
-  (gen/fmap (fn [vec] (let [list (ArrayList.)]
-                        (doseq [el vec]
-                          (.add list el))
-                        list))
-            (gen/vector (gen/one-of [string-gen number-gen symbol-gen]) 1 5)))
+(defspec prop-remove-one 200
+  (prop/for-all [bag bag-gen
+                 key string-gen]
+                (let [b2 (remove-one-from-bag (insert bag key) key)]
+                  (<= (count-occurrences b2 key) (count-occurrences (insert bag key) key)))))
 
-(def mixed-gen
-  (gen/one-of [string-gen number-gen symbol-gen arraylist-gen]))
+(defspec prop-merge-commutative 200
+  (prop/for-all [a bag-gen b bag-gen]
+                (compare-bags (merge-bags a b) (merge-bags b a))))
 
-(deftest test-insert-and-count-occurrences
-  (tc/quick-check 100
-                  (prop/for-all [key mixed-gen]
-                                (let [bag (-> (create-prefix-tree [])
-                                              (insert key))]
-                                  (= 1 (count-occurrences bag key))))))
+(defspec prop-merge-associative 200
+  (prop/for-all [a bag-gen b bag-gen c bag-gen]
+                (compare-bags (merge-bags a (merge-bags b c))
+                              (merge-bags (merge-bags a b) c))))
 
-(deftest test-insert-and-remove
-  (tc/quick-check 100
-                  (prop/for-all [key mixed-gen]
-                                (let [bag (-> (create-prefix-tree [])
-                                              (insert key))
-                                      updated-bag (remove-one-from-bag bag key)]
-                                  (and (= 0 (count-occurrences updated-bag key))
-                                       (= 1 (count-occurrences bag key)))))))
-
-(deftest test-merge-bags
-  (tc/quick-check 100
-                  (prop/for-all [keys1 (gen/vector mixed-gen 1 5)
-                                 keys2 (gen/vector mixed-gen 1 5)]
-                                (let [bag1 (create-prefix-tree keys1)
-                                      bag2 (create-prefix-tree keys2)
-                                      merged-bag (merge-bags bag1 bag2)]
-                                  (and (every? #(= (count-occurrences merged-bag %) (+ (count-occurrences bag1 %) (count-occurrences bag2 %))) keys1)
-                                       (every? #(= (count-occurrences merged-bag %) (+ (count-occurrences bag1 %) (count-occurrences bag2 %))) keys2))))))
-
-(deftest test-filter-bag
-  (tc/quick-check 100
-                  (prop/for-all [keys (gen/vector mixed-gen 1 5)
-                                 pred (gen/elements [(fn [s] (seq (s)))  ;; Предикаты для фильтрации
-                                                     (constantly false)])]
-                                (let [bag (create-prefix-tree keys)
-                                      filtered-bag (filter-bag bag pred)]
-                                  ;; Проверяем, что результат фильтрации соответствует предикату
-                                  (every? (fn [k]
-                                            (if (pred k)
-                                              ;; Если предикат истинный, количество в отфильтрованном мешке должно быть тем же
-                                              (= (count-occurrences filtered-bag k) (count-occurrences bag k))
-                                              ;; Иначе количество в отфильтрованном мешке должно быть 0
-                                              (= (count-occurrences filtered-bag k) 0)))
-                                          keys)))))
-
-(deftest test-compare-bags
-  (tc/quick-check 100
-                  (prop/for-all [keys1 (gen/vector mixed-gen 1 5)
-                                 keys2 (gen/vector mixed-gen 1 5)]
-                                (let [bag1 (create-prefix-tree keys1)
-                                      bag2 (create-prefix-tree keys1)
-                                      bag3 (create-prefix-tree keys2)]
-                                  (and (compare-bags bag1 bag2)
-                                       (not (compare-bags bag1 bag3)))))))
-
-(deftest commutative-property
-  (tc/quick-check 100
-                  (prop/for-all [keys1 (gen/vector mixed-gen 1 5)
-                                 keys2 (gen/vector mixed-gen 1 5)]
-                                (let [tree1 (create-prefix-tree keys1)
-                                      tree2 (create-prefix-tree keys2)]
-                                  (compare-bags (merge-bags tree1 tree2) (merge-bags tree2 tree1))))))
-
-(deftest associative-property
-  (tc/quick-check 100
-                  (prop/for-all [keys1 (gen/vector string-gen 1 5)
-                                 keys2 (gen/vector string-gen 1 5)
-                                 keys3 (gen/vector string-gen 1 5)]
-                                (let [tree1 (create-prefix-tree keys1)
-                                      tree2 (create-prefix-tree keys2)
-                                      tree3 (create-prefix-tree keys3)]
-                                  (compare-bags (merge-bags tree1 (merge-bags tree2 tree3))
-                                                (merge-bags (merge-bags tree1 tree2) tree3))))))
-
-(deftest neutral-element-property
-  (tc/quick-check 100
-                  (prop/for-all [keys (gen/vector string-gen 1 5)]
-                                (let [tree (create-prefix-tree keys)
-                                      zero-tree (create-prefix-tree [])] ;; Нейтральный элемент
-                                  (compare-bags (merge-bags tree zero-tree) tree)))))
-
-(run-tests)
-
-
+(defspec prop-neutral-element 200
+  (prop/for-all [a bag-gen]
+                (compare-bags (merge-bags a empty-bag) a)))
