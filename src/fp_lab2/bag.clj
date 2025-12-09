@@ -12,10 +12,6 @@
   [m]
   (sort-by pr-str (keys m)))
 
-(defn- get-trie
-  [^clojure.lang.Object bag]
-  (.trie bag))
-
 (deftype ^:private TrieBag [trie]
   Seqable
   (seq [this]
@@ -39,6 +35,10 @@
          (compare-bags this other)))
   (hashCode [this]
     (hash (into {} (entries this)))))
+
+(defn- get-trie
+  [^TrieBag bag]
+  (.trie bag))
 
 (defn create-prefix-tree
   [keys]
