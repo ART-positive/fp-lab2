@@ -15,20 +15,20 @@
 (deftype ^:private TrieBag [trie]
   Seqable
   (seq [this]
-       (let [es (entries this)]
-         (when (seq es)
-           (mapcat (fn [[k n]] (repeat n k)) es))))
-  
+    (let [es (entries this)]
+      (when (seq es)
+        (mapcat (fn [[k n]] (repeat n k)) es))))
+
   IReduceInit
   (reduce [this f init]
-          (let [es (entries this)]
-            (loop [s (seq es) acc init]
-              (if (seq s)
-                (let [[k n] (first s)
-                      acc2 (loop [i n a acc]
-                             (if (zero? i) a (recur (dec i) (f a k))))]
-                  (recur (next s) acc2))
-                acc))))
+    (let [es (entries this)]
+      (loop [s (seq es) acc init]
+        (if (seq s)
+          (let [[k n] (first s)
+                acc2 (loop [i n a acc]
+                       (if (zero? i) a (recur (dec i) (f a k))))]
+            (recur (next s) acc2))
+          acc))))
 
   Counted
   (count [this]
