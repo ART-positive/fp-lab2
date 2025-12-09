@@ -12,7 +12,11 @@
   [m]
   (sort-by pr-str (keys m)))
 
-(deftype TrieBag [trie]
+(defn- get-trie
+  [^clojure.lang.Object bag]
+  (.trie bag))
+
+(deftype ^:private TrieBag [trie]
   Seqable
   (seq [this]
     (seq (entries this)))
@@ -43,10 +47,14 @@
           keys))
 
 (defn- insert-seq
-  [trie elems n]
+  [trie elems n orig-key]
   (letfn [(ins [node s]
             (if (empty? s)
-              (update node :count (fn [c] (+ (or c 0) n)))
+              (let [updated (update node :count (fn [c] (+ (or c 0) n)))
+                    updated (if (and (nil? (:orig-key updated)) (some? orig-key))
+                              (assoc updated :orig-key orig-key)
+                              updated)]
+                updated)
               (let [e (first s)
                     next-node (get-in node [:children e] (empty-trie))
                     updated-next (ins next-node (rest s))]
@@ -56,14 +64,14 @@
 (defn insert
   [^TrieBag bag key]
   (let [elems (seq key)]
-    (TrieBag. (insert-seq (.trie bag) elems 1))))
+    (TrieBag. (insert-seq (get-trie bag) elems 1 key))))
 
 (defn- insert-n
   [^TrieBag bag key n]
   (if (<= n 0)
     bag
     (let [elems (seq key)]
-      (TrieBag. (insert-seq (.trie bag) elems n)))))
+      (TrieBag. (insert-seq (get-trie bag) elems n key)))))
 
 (defn count-occurrences
   [^TrieBag bag key]
@@ -72,13 +80,17 @@
               (or (:count node) 0)
               (let [next (get-in node [:children (first s)])]
                 (if next (lookup next (rest s)) 0))))]
-    (lookup (.trie bag) (seq key))))
+    (lookup (get-trie bag) (seq key))))
 
 (defn- remove-seq
   [trie elems n]
   (letfn [(rem-1 [node s]
             (if (empty? s)
-              (update node :count (fn [c] (max 0 (- (or c 0) n))))
+              (let [newnode (update node :count (fn [c] (max 0 (- (or c 0) n))))]
+                ;; if count dropped to zero, remove stored orig-key (keep children if any)
+                (if (zero? (or (:count newnode) 0))
+                  (dissoc newnode :orig-key)
+                  newnode))
               (let [e (first s)
                     next-node (get-in node [:children e])]
                 (if (nil? next-node)
@@ -93,7 +105,7 @@
 
 (defn remove-one-from-bag
   [^TrieBag bag key]
-  (TrieBag. (remove-seq (.trie bag) (seq key) 1)))
+  (TrieBag. (remove-seq (get-trie bag) (seq key) 1)))
 
 (defn trie-keys
   [^TrieBag bag]
@@ -102,7 +114,10 @@
 (defn entries
   [^TrieBag bag]
   (letfn [(collect [node prefix]
-            (let [cur (when (> (or (:count node) 0) 0) [(apply str prefix) (:count node)])
+            (let [cur (when (> (or (:count node) 0) 0)
+                        (if (contains? node :orig-key)
+                          [(:orig-key node) (:count node)]
+                          [(apply str prefix) (:count node)]))
                   children (mapcat (fn [k]
                                      (collect (get-in node [:children k])
                                               (conj prefix k)))
@@ -110,7 +125,7 @@
               (if cur
                 (cons cur children)
                 children)))]
-    (collect (.trie bag) [])))
+    (collect (get-trie bag) [])))
 
 (defn entries-with-mapped-keys
   [bag]
@@ -130,7 +145,7 @@
   [^TrieBag a ^TrieBag b]
   (and (instance? TrieBag a)
        (instance? TrieBag b)
-       (compare-tries (.trie a) (.trie b))))
+       (compare-tries (get-trie a) (get-trie b))))
 
 (defn merge-bags
   [^TrieBag a ^TrieBag b]

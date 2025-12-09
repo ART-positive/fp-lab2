@@ -24,7 +24,7 @@
 
 (deftest test-filter
   (let [tree (create-prefix-tree ["apple" "banana" "apricot"])
-        out (filter-bag tree #(clojure.string/starts-with? % "a"))]
+        out (filter-bag tree #(str/starts-with? % "a"))]
     (is (= (set (entries out)) #{["apple" 1] ["apricot" 1]}))))
 
 (deftest test-map-entries
