@@ -15,15 +15,20 @@
 (deftype ^:private TrieBag [trie]
   Seqable
   (seq [this]
-    (seq (entries this)))
-
+       (let [es (entries this)]
+         (when (seq es)
+           (mapcat (fn [[k n]] (repeat n k)) es))))
+  
   IReduceInit
   (reduce [this f init]
-    (let [es (entries this)]
-      (loop [s (seq es) acc init]
-        (if (seq s)
-          (recur (next s) (f acc (first s)))
-          acc))))
+          (let [es (entries this)]
+            (loop [s (seq es) acc init]
+              (if (seq s)
+                (let [[k n] (first s)
+                      acc2 (loop [i n a acc]
+                             (if (zero? i) a (recur (dec i) (f a k))))]
+                  (recur (next s) acc2))
+                acc))))
 
   Counted
   (count [this]
@@ -50,11 +55,11 @@
   [trie elems n orig-key]
   (letfn [(ins [node s]
             (if (empty? s)
-              (let [updated (update node :count (fn [c] (+ (or c 0) n)))
-                    updated (if (and (nil? (:orig-key updated)) (some? orig-key))
-                              (assoc updated :orig-key orig-key)
-                              updated)]
-                updated)
+              (let [updated-count (update node :count (fn [c] (+ (or c 0) n)))
+                    updated-node  (if (and (nil? (:orig-key updated-count)) (some? orig-key))
+                                    (assoc updated-count :orig-key orig-key)
+                                    updated-count)]
+                updated-node)
               (let [e (first s)
                     next-node (get-in node [:children e] (empty-trie))
                     updated-next (ins next-node (rest s))]
