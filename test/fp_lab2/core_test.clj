@@ -46,3 +46,27 @@
     (is (= (fold-left-trie bag (fn [acc _ cnt] (+ acc cnt)) 0) 4))
     (is (= (fold-right-trie bag (fn [acc _ cnt] (+ acc cnt)) 0) 4))
     (is (= (fold-left-trie bag (fn [acc key _] (conj acc key)) []) ["apple" "banana" "cherry"]))))
+
+(deftest test-seq-functions
+  (let [bag (create-prefix-tree ["apple" "banana" "apple" "cherry"])]
+    ;; map
+    (is (= {"APPLE" 2 "BANANA" 1 "CHERRY" 1}
+           (frequencies (map clojure.string/upper-case bag))))
+    ;; reduce
+    (is (= 4 (reduce (fn [acc _] (inc acc)) 0 bag)))
+    ;; filter
+    (is (= {"apple" 2}
+           (frequencies (filter #(= "apple" %) bag))))
+    ;; count
+    (is (= 4 (count bag)))
+    ;; distinct
+    (is (= #{"apple" "banana" "cherry"}
+           (set (distinct bag))))
+    ;; sort
+    (is (= ["apple" "apple" "banana" "cherry"]
+           (sort bag)))
+    ;; group-by
+    (let [bag2 (create-prefix-tree ["apple" "banana" "apple" "apricot"])]
+      (is (= {"a" ["apple" "apple" "apricot"]
+              "b" ["banana"]}
+             (group-by #(str (first %)) bag2))))))
