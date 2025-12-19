@@ -41,6 +41,10 @@
   (hashCode [this]
     (hash (into {} (entries this)))))
 
+  java.lang.Iterable
+  (iterator [this]
+    (.iterator ^java.lang.Iterable (seq this)))
+
 (defn- get-trie
   [^TrieBag bag]
   (.trie bag))
