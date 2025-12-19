@@ -142,7 +142,7 @@
 
 (defn compare-tries [t1 t2]
   (cond
-    (not= (or (:count t1 0) 0) (or (:count t2 0) 0)) false
+    (not= (or (:count t1) 0) (or (:count t2) 0)) false
     (not= (count (:children t1)) (count (:children t2))) false
     :else
     (every? (fn [k]
