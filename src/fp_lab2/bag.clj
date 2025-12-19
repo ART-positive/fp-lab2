@@ -19,6 +19,10 @@
       (when (seq es)
         (mapcat (fn [[k n]] (repeat n k)) es))))
 
+  java.lang.Iterable
+  (iterator [this]
+    (.iterator ^java.lang.Iterable (seq this)))
+
   IReduceInit
   (reduce [this f init]
     (let [es (entries this)]
@@ -40,10 +44,6 @@
          (compare-bags this other)))
   (hashCode [this]
     (hash (into {} (entries this)))))
-
-  java.lang.Iterable
-  (iterator [this]
-    (.iterator ^java.lang.Iterable (seq this)))
 
 (defn- get-trie
   [^TrieBag bag]
