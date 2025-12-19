@@ -51,22 +51,22 @@
   (let [bag (create-prefix-tree ["apple" "banana" "apple" "cherry"])]
     ;; map
     (is (= {"APPLE" 2 "BANANA" 1 "CHERRY" 1}
-           (frequencies (map clojure.string/upper-case bag))))
+           (frequencies (map clojure.string/upper-case (seq bag)))))
     ;; reduce
     (is (= 4 (reduce (fn [acc _] (inc acc)) 0 bag)))
     ;; filter
     (is (= {"apple" 2}
-           (frequencies (filter #(= "apple" %) bag))))
+           (frequencies (filter #(= "apple" %) (seq bag)))))
     ;; count
     (is (= 4 (count bag)))
     ;; distinct
     (is (= #{"apple" "banana" "cherry"}
-           (set (distinct bag))))
+           (set (distinct (seq bag)))))
     ;; sort
     (is (= ["apple" "apple" "banana" "cherry"]
-           (sort bag)))
+           (sort (seq bag))))
     ;; group-by
     (let [bag2 (create-prefix-tree ["apple" "banana" "apple" "apricot"])]
       (is (= {"a" ["apple" "apple" "apricot"]
               "b" ["banana"]}
-             (group-by #(str (first %)) bag2))))))
+             (group-by #(str (first %)) (seq bag2)))))))
