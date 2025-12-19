@@ -140,15 +140,16 @@
   [bag]
   (entries bag))
 
-(defn compare-tries
-  [t1 t2]
-  (letfn [(cmp [n1 n2]
-            (and (= (or (:count n1) 0) (or (:count n2) 0))
-                 (= (set (keys (:children n1))) (set (keys (:children n2))))
-                 (every? (fn [k]
-                           (cmp (get-in n1 [:children k]) (get-in n2 [:children k])))
-                         (keys (:children n1)))))]
-    (cmp t1 t2)))
+(defn compare-tries [t1 t2]
+  (cond
+    (not= (or (:count t1 0) 0) (or (:count t2 0) 0)) false
+    (not= (count (:children t1)) (count (:children t2))) false
+    :else
+    (every? (fn [k]
+              (let [c1 (get-in t1 [:children k])
+                    c2 (get-in t2 [:children k])]
+                (and c2 (compare-tries c1 c2))))
+            (keys (:children t1)))))
 
 (defn compare-bags
   [^TrieBag a ^TrieBag b]
